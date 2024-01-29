@@ -28,35 +28,34 @@ MELON是一个热爱雨花石的人，他拥有一堆数量为n的精美雨花�
 示例2：
 输入：
 10
-1 1 1 1 19 8 3 7 10
+1 1 1 1 1 3 7 8 9 10
 
 输出：
 3
 
 说明：
-输入的第一行表示共有10块雨花石，第二行表示这些石头的重量分别为1、1、1、1、19、8、3、7、10。在一种平均分配的方案下，
+输入的第一行表示共有10块雨花石，第二行表示这些石头的重量分别为1、1、1、1、1、9、8、3、7、10。在一种平均分配的方案下，
 可以选择1,1,1,1,1,9,7和10,8,3两种方式，其中第一种方式只需取出重量为10,8,3的3块石头，而第二种方式则需要取出4块石头，因此输出3（取出的石头数量最少）。
 
-
-思路: 先从大的选, 如果超过了一半就从小的放, 换一个比这还小的, 如果还超就换个更小的,直到找到一个合适的. 如果找不到就再丢一下大一点的, 重复上述过程. 如果最后还是找不到就输出-1.
-19 10 8 7 3 1 1 1 1
-sum= 52
-half= 26
-19+10 = 29 0 1
-19+8 = 27 0 2
-19+7 = 26 0 3
 
 */
 #include <iostream>
 #include <vector>
 #include <algorithm>
 #include <stack>
+#ifdef __GNUC__
+#define POPCOUNT __builtin_popcount
+#elif defined(_MSC_VER)
+#include <intrin.h>
+#define POPCOUNT __popcnt
+#endif
+#include <bitset>
 int main(int argc, char *argv[])
 {
     int n;
     std::cin >> n;
     std::vector<int> m(n);
-    std::stack<int> index;
+    std::vector<int> dp(1001, 0);
     for (int i = 0; i < n; ++i)
     {
         std::cin >> m[i];
@@ -71,40 +70,40 @@ int main(int argc, char *argv[])
         std::cout << -1 << std::endl;
         return 0;
     }
-    int half = sum / 2;
-    std::sort(m.begin(), m.end(), std::greater<int>());
-    int temp = 0;
-    int current_drop;
-    bool flag = true;
-    for (int i = 0; i < m.size() && flag; i++)
+    sort(m.begin(), m.end(), std::greater<int>());
+    auto half = sum / 2;
+    // 暴力枚举
+    for (long long i = 0; i < (1 << n) + 1; i++)
     {
-        temp += m[i];
-        index.push(i);
-        if (temp == half)
+        long long sum = 0;
+        for (long long j = 0; j < n; j++)
         {
-            break;
-        }
-        if (temp > half)
-        {
-            temp -= m[index.top()];
-            for (int j = 0; j < index.top(); j++)
+            if (i & (1 << j))
             {
-                temp += m[j];
-                index.push(j);
-                if (temp == half)
-                {
-                    // exit
-                    flag = false;
-                    break;
-                }
-                if (temp > half)
-                {
-                    temp -= m[index.top()];
-                    index.pop();
-                }
+                sum += m[j];
             }
         }
+        if (sum == half)
+        {
+            // std::cout << __builtin_popcount(i) << std::endl;
+            std::cout << POPCOUNT(i) << ' ' << std::bitset<32>(i) << std::endl;
+            // return 0;
+        }
     }
-    std::cout << index.size() << std::endl;
+
+    // 动态规划
+    dp[0] = 1;
+    for (int i = 1; i < m.size(); i++)
+    {
+        for (int j = half; j >= m[i]; j--)
+        {
+            dp[j] = dp[j - m[i]] + 1;
+        }
+        if (dp[half])
+        {
+            std::cout << dp[half] << std::endl;
+            return 0;
+        }
+    }
     return 0;
 }
